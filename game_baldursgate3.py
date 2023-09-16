@@ -10,7 +10,6 @@ import mobase
 from ..basic_features import BasicGameSaveGameInfo
 from ..basic_game import BasicGame
 
-
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Support Plugin"
     Author = "chazwarp923"
@@ -24,11 +23,17 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     GameSteamId = [1086940]
     GameGogId = [1456460669]
     GameBinary = "bin/bg3.exe"
-    # GameLauncher = "Launcher/LariLauncher.exe"
+    #GameLauncher = "Launcher/LariLauncher.exe"
     GameDataPath = "Data"
     GameSaveExtension = "lsv"  # Not confirmed
-    GameDocumentsDirectory = "%LOCALAPPDATA%/Larian Studios/" "Baldur's Gate 3"
-    GameSavesDirectory = "%LOCALAPPDATA%/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/Savegames/Story"
+    GameDocumentsDirectory = (
+        os.getenv('LOCALAPPDATA') + "/Larian Studios/Baldur's Gate 3"
+    )
+    GameSavesDirectory = (
+        os.getenv('LOCALAPPDATA') + "/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/Savegames/Story"
+    )
+    
+    DOCS_MOD_SPECIAL_NAME = "PAK_FILES"
 
     def __init__(self):
         BasicGame.__init__(self)
@@ -36,19 +41,17 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
 
     def init(self, organizer: mobase.IOrganizer):
         super().init(organizer)
+        
         self._featureMap[mobase.SaveGameInfo] = BasicGameSaveGameInfo(
             lambda s: s.replace(".lsv", ".webp")
         )
-        self._featureMap[mobase.ModDataChecker] = BaldursGate3ModDataChecker()
-
-        # Create the symlink to the mods directory if it doesn't exist
-        modsPath = Path(self.dataDirectory().absolutePath()).parent
-        modsPath = modsPath / "Mods"
-        if not os.path.exists(modsPath):
-            dest = Path(os.getenv("LOCALAPPDATA"))
-            dest = dest / "Larian Studios/Baldur's Gate 3/Mods"
-            modsPath.symlink_to(dest)
-
+        
+        self._featureMap[
+            mobase.ModDataChecker
+        ] = BaldursGate3ModDataChecker()
+        
+        
+        
         return True
 
     def executables(self):
@@ -60,19 +63,46 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
                 "BG3 - DX11", QFileInfo(self.gameDirectory(), "bin/bg3_dx11.exe")
             ).withArgument("--skip-launcher"),
             mobase.ExecutableInfo(
-                "Larian Launcher",
-                QFileInfo(self.gameDirectory(), "Launcher/LariLauncher.exe"),
+                "Larian Launcher", QFileInfo(self.gameDirectory(), "Launcher/LariLauncher.exe")
             ),
         ]
+        
+    def mappings(self) -> List[mobase.Mapping]:
+        map = []
+        modDirs = [self.DOCS_MOD_SPECIAL_NAME]
+        self._listDirsRecursive(modDirs, prefix=self.DOCS_MOD_SPECIAL_NAME)
+        for dir_ in modDirs:
+            for file_ in self._organizer.findFiles(path=dir_, filter=lambda x: True):
+                m = mobase.Mapping()
+                m.createTarget = True
+                m.isDirectory = False
+                m.source = file_
+                m.destination = os.path.join(
+                    self.documentsDirectory().absoluteFilePath("Mods"),
+                    file_.split(self.DOCS_MOD_SPECIAL_NAME)[1].strip("\\").strip("/"),
+                )
+                print(dir_)
+                map.append(m)
+        return map
 
+    def _listDirsRecursive(self, dirs_list, prefix=""):
+        dirs = self._organizer.listDirectories(prefix)
+        for dir_ in dirs:
+            dir_ = os.path.join(prefix, dir_)
+            dirs_list.append(dir_)
+            self._listDirsRecursive(dirs_list, dir_)
+            
+    def primarySources(self):
+        return self.GameValidShortNames
 
 class BaldursGate3ModDataChecker(mobase.ModDataChecker):
     def __init__(self):
         super().__init__()
 
     def dataLooksValid(
-        self, tree: mobase.IFileTree
+            self, tree: mobase.IFileTree
     ) -> mobase.ModDataChecker.CheckReturn:
+
         folders: List[mobase.IFileTree] = []
         files: List[mobase.FileTreeEntry] = []
 
@@ -95,6 +125,7 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
             "Root",
             "Shaders",
             "Video",
+            BaldursGate3Game.DOCS_MOD_SPECIAL_NAME,
         ]
         for src_folder in folders:
             for dst_folder in VALID_FOLDERS:
@@ -130,6 +161,6 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
 
         for src_file in files:
             if src_file.name().lower().endswith(".pak"):
-                tree.move(src_file, "/Root/Mods/", policy=mobase.IFileTree.MERGE)
+                tree.move(src_file, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
 
         return tree
