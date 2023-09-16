@@ -1,1 +1,0 @@
-mklink /d "%CD%\Mods" "%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods"
