@@ -4,7 +4,7 @@
 import mobase
 
 
-def generateSettings(pl: mobase.IPluginList) -> bool:
-    # clr.AddReference("LSLib.dll")
-
+def generateSettings(ml: mobase.IModList) -> bool:
+    # clr.AddReference("LSLib")
+    print(ml.allMods())
     return True

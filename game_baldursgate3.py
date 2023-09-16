@@ -99,7 +99,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     # return self.GameValidShortNames
 
     def aboutToRunCallback(self, path: str) -> bool:
-        ModSettingsHelper.generateSettings(self._organizer.pluginList())
+        ModSettingsHelper.generateSettings(self._organizer.modList())
         return True
 
 
