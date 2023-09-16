@@ -15,7 +15,7 @@ from .baldursgate3 import ModSettingsHelper
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Support Plugin"
     Author = "chazwarp923"
-    Version = "2.0.0"
+    Version = "1.1.0"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
@@ -99,7 +99,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     # return self.GameValidShortNames
 
     def aboutToRunCallback(self, path: str) -> bool:
-        ModSettingsHelper.generateSettings(self._organizer.modList())
+        # ModSettingsHelper.generateSettings(self._organizer.modList())
         return True
 
 
