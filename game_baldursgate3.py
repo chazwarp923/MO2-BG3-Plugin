@@ -2,7 +2,7 @@
 
 import os
 from typing import List, Optional
-from PyQt5.QtCore import QDir, QFileInfo
+from PyQt6.QtCore import QDir, QFileInfo
 
 import mobase
 
@@ -15,7 +15,7 @@ from ..basic_game import BasicGame
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Support Plugin"
     Author = "chazwarp923"
-    Version = "1.1.0"
+    Version = "1.1.1"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
