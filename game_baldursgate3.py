@@ -45,7 +45,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
         super().init(organizer)
 
         self._featureMap[mobase.SaveGameInfo] = BasicGameSaveGameInfo(
-            lambda s: s.replace(".lsv", ".webp")
+            lambda s: s.with_suffix(".webp")
         )
 
         self._featureMap[mobase.ModDataChecker] = BaldursGate3ModDataChecker()
