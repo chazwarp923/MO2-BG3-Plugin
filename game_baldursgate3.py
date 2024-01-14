@@ -15,7 +15,7 @@ from ..basic_game import BasicGame
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Support Plugin"
     Author = "chazwarp923"
-    Version = "1.1.1"
+    Version = "1.1.3"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
@@ -169,5 +169,7 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
         for src_file in files:
             if src_file.name().lower().endswith(".pak"):
                 tree.move(src_file, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
+            elif src_file.name().lower().endswith("info.json"):
+                tree.remove(src_file)
 
         return tree
