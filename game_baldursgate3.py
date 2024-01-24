@@ -15,7 +15,7 @@ from ..basic_game import BasicGame
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Support Plugin"
     Author = "chazwarp923"
-    Version = "1.1.3"
+    Version = "1.2.0"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
@@ -28,12 +28,12 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     GameDataPath = "Data"
     GameSaveExtension = "lsv"
     GameDocumentsDirectory = (
-        os.getenv("LOCALAPPDATA") + "/Larian Studios/Baldur's Gate 3"
+        os.getenv("LOCALAPPDATA") + "/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/"
     )
     GameSavesDirectory = (
-        os.getenv("LOCALAPPDATA")
-        + "/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/Savegames/Story"
+        os.getenv("LOCALAPPDATA") + "/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/Savegames/Story"
     )
+    GameIniFiles = ["modsettings.lsx", "config.lsf", "profile8.lsf", "UILayout.lsx"]
 
     DOCS_MOD_SPECIAL_NAME = "PAK_FILES"
 
@@ -80,7 +80,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
                 m.isDirectory = False
                 m.source = file_
                 m.destination = os.path.join(
-                    self.documentsDirectory().absoluteFilePath("Mods"),
+                    QDir(os.getenv("LOCALAPPDATA") + "/Larian Studios/Baldur's Gate 3/").absoluteFilePath("Mods"),
                     file_.split(self.DOCS_MOD_SPECIAL_NAME)[1].strip("\\").strip("/"),
                 )
                 map.append(m)
