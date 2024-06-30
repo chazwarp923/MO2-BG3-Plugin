@@ -7,6 +7,7 @@ from PyQt6.QtCore import QDir, QFileInfo, QDirIterator, QFile, QFileInfo
 import mobase
 
 from ..basic_features import BasicGameSaveGameInfo
+from ..basic_features import BasicLocalSavegames
 from ..basic_game import BasicGame
 
 from .baldursgate3 import ModSettingsHelper
@@ -52,8 +53,9 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
         )
 
         self._featureMap[mobase.ModDataChecker] = BaldursGate3ModDataChecker()
+        
+        self._featureMap[mobase.LocalSavegames] = BasicLocalSavegames(self.savesDirectory())
 
-        # callback = ModSettingsHelper.generateSettings()
         self._organizer.onAboutToRun(self.onAboutToRun)
         self._organizer.onFinishedRun(self.onFinishedRun)
 
@@ -116,9 +118,6 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
             dir_ = os.path.join(prefix, dir_)
             dirs_list.append(dir_)
             self._listDirsRecursive(dirs_list, dir_)
-            
-    #def getModList() -> mobase.IModList:
-        #return this._organizer.modList()
 
     def onAboutToRun(self, path: str) -> bool:
         ModSettingsHelper.generateSettings(self._organizer.modList(), self._organizer.profile())
