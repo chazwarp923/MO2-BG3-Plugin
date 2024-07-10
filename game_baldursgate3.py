@@ -168,22 +168,27 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
             "Video",
             BaldursGate3Game.PAK_MOD_PREFIX,
         ]
+
+        VALID_FILE_EXTENSIONS = [
+            ".pak",
+            ".dll",
+        ]
+
         for src_folder in folders:
             for dst_folder in VALID_FOLDERS:
                 if src_folder.name().lower() == dst_folder.lower():
                     return mobase.ModDataChecker.VALID
-
-        VALID_FILE_EXTENSIONS = [
-            ".pak",
-        ]
-        for src_file in files:
-            for extension in VALID_FILE_EXTENSIONS:
-                if src_file.name().lower().endswith(extension.lower()):
+                else:
                     return mobase.ModDataChecker.FIXABLE
 
         for src_folder in folders:
             if src_folder.name().lower().endswith("bin"):
                 return mobase.ModDataChecker.FIXABLE
+
+        for src_file in files:
+            for extension in VALID_FILE_EXTENSIONS:
+                if src_file.name().lower().endswith(extension.lower()):
+                    return mobase.ModDataChecker.FIXABLE
 
         return mobase.ModDataChecker.INVALID
 
@@ -191,6 +196,7 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
         folders: List[mobase.IFileTree] = []
         files: List[mobase.FileTreeEntry] = []
         for entry in tree:
+            print(entry)
             if isinstance(entry, mobase.IFileTree):
                 folders.append(entry)
             else:
@@ -199,6 +205,10 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
         for src_folder in folders:
             if src_folder.name().lower().endswith("bin"):
                 tree.move(src_folder, "/Root/", policy=mobase.IFileTree.MERGE)
+
+        for src_file in files:
+            if src_file.name().lower().endswith(".dll"):
+                tree.move(src_file, "/Root/bin/", policy=mobase.IFileTree.MERGE)
 
         for src_file in files:
             if src_file.name().lower().endswith(".pak"):
