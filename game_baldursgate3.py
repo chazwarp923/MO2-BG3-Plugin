@@ -48,15 +48,15 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     def init(self, organizer: mobase.IOrganizer):
         super().init(organizer)
 
-        self._featureMap[mobase.SaveGameInfo] = BasicGameSaveGameInfo(
+        self._register_feature(BasicGameSaveGameInfo(
             lambda s: s.with_suffix(".webp")
-        )
+        ))
 
-        self._featureMap[mobase.ModDataChecker] = BaldursGate3ModDataChecker()
-        
-        self._featureMap[mobase.LocalSavegames] = BasicLocalSavegames(self.savesDirectory())
+        self._register_feature(BaldursGate3ModDataChecker())
 
-        self._organizer.onAboutToRun(self.onAboutToRun)
+        self._register_feature(BasicLocalSavegames(self.savesDirectory()))
+
+        #self._organizer.onAboutToRun(self.onAboutToRun)
         self._organizer.onFinishedRun(self.onFinishedRun)
 
         return True
@@ -120,7 +120,9 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
             self._listDirsRecursive(dirs_list, dir_)
 
     def onAboutToRun(self, path: str) -> bool:
-        ModSettingsHelper.generateSettings(self._organizer.modList(), self._organizer.profile())
+        ModSettingsHelper.generateSettings(
+            self._organizer.modList(), self._organizer.profile()
+        )
         return True
 
     def onFinishedRun(self, path: str, integer: int) -> bool:
@@ -128,13 +130,13 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
             os.getenv("LOCALAPPDATA") + "/Larian Studios/Baldur's Gate 3/"
         ).absoluteFilePath("Script Extender")
 
-        #it = QDirIterator(seDir)
-        #while it.hasNext():
-            #f = QFile(it.next())
-           # if QFileInfo(f).fileName() != "." and QFileInfo(f).fileName() != "..":
-                #if not QDir(self._organizer.overwritePath() + QFileInfo(f).fileName()).exists():
-                    #shutil.move(f.fileName(), self._organizer.overwritePath())
-                    # find a way to not call if directory already exists
+        # it = QDirIterator(seDir)
+        # while it.hasNext():
+        # f = QFile(it.next())
+        # if QFileInfo(f).fileName() != "." and QFileInfo(f).fileName() != "..":
+        # if not QDir(self._organizer.overwritePath() + QFileInfo(f).fileName()).exists():
+        # shutil.move(f.fileName(), self._organizer.overwritePath())
+        # find a way to not call if directory already exists
         return True
 
 
@@ -142,7 +144,9 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
     def __init__(self):
         super().__init__()
 
-    def dataLooksValid(self, tree: mobase.IFileTree) -> mobase.ModDataChecker.CheckReturn:
+    def dataLooksValid(
+        self, tree: mobase.IFileTree
+    ) -> mobase.ModDataChecker.CheckReturn:
         folders: List[mobase.IFileTree] = []
         files: List[mobase.FileTreeEntry] = []
 
@@ -174,21 +178,28 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
             ".dll",
         ]
 
+        for src_file in files:
+            for extension in VALID_FILE_EXTENSIONS:
+                if src_file.name().lower().endswith(extension.lower()):
+                    print("we should be fucking working ya twat")
+                    return mobase.ModDataChecker.FIXABLE
+
         for src_folder in folders:
             for dst_folder in VALID_FOLDERS:
                 if src_folder.name().lower() == dst_folder.lower():
                     return mobase.ModDataChecker.VALID
-                else:
-                    return mobase.ModDataChecker.FIXABLE
 
         for src_folder in folders:
             if src_folder.name().lower().endswith("bin"):
                 return mobase.ModDataChecker.FIXABLE
 
-        for src_file in files:
-            for extension in VALID_FILE_EXTENSIONS:
-                if src_file.name().lower().endswith(extension.lower()):
-                    return mobase.ModDataChecker.FIXABLE
+        for src_folder in folders:
+            if "ModFixer" in str(src_folder):
+                return mobase.ModDataChecker.FIXABLE
+            if src_folder in VALID_FOLDERS:
+                print()
+            else:
+                print("Invalid Folder: " + str(src_folder))
 
         return mobase.ModDataChecker.INVALID
 
@@ -196,22 +207,23 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
         folders: List[mobase.IFileTree] = []
         files: List[mobase.FileTreeEntry] = []
         for entry in tree:
-            print(entry)
+            print("entry in fix: " + str(entry))
             if isinstance(entry, mobase.IFileTree):
                 folders.append(entry)
             else:
                 files.append(entry)
 
         for src_folder in folders:
-            if src_folder.name().lower().endswith("bin"):
+            if src_folder.name().lower().endswith("bin".lower()):
                 tree.move(src_folder, "/Root/", policy=mobase.IFileTree.MERGE)
 
         for src_file in files:
-            if src_file.name().lower().endswith(".dll"):
+            if src_file.name().lower().endswith(".dll".lower()):
                 tree.move(src_file, "/Root/bin/", policy=mobase.IFileTree.MERGE)
 
         for src_file in files:
-            if src_file.name().lower().endswith(".pak"):
+            if src_file.name().lower().endswith(".pak".lower()):
+                print("moving file")
                 tree.move(src_file, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
 
         return tree
