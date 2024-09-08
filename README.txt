@@ -7,8 +7,7 @@ Keyzma's Root Builder Plugin is an optional dependency if you want to be able to
 anything that goes in the /bin folder without having to muddy up your
 BG3 install folder
 
-This plugin does currently work for any mods packaged in .pak format as long as they include a info.json.
-In my personal testing, this should be capable of loading dll mods, such as achievement enabler and script extender.
+In my personal testing, this is capable of loading dll mods, such as achievement enabler and script extender.
 
 INSTALLATION
 
