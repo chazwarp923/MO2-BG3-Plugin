@@ -16,7 +16,7 @@ from .baldursgate3 import ModSettingsHelper
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Support Plugin"
     Author = "chazwarp923"
-    Version = "2.0.0"
+    Version = "2.1.0"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
