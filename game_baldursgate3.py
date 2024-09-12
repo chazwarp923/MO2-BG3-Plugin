@@ -2,21 +2,21 @@
 
 import os, shutil
 from typing import List, Optional
-from PyQt6.QtCore import QDir, QFileInfo, QDirIterator, QFile, QFileInfo
+from PyQt6.QtCore import QDir, QFileInfo, QDirIterator, QFile, QFileInfo, qDebug
 
 import mobase
 
-from ..basic_features import BasicGameSaveGameInfo
-from ..basic_features import BasicLocalSavegames
+from ..basic_features import BasicGameSaveGameInfo, BasicLocalSavegames, BasicModDataChecker
 from ..basic_game import BasicGame
 
 from .baldursgate3 import ModSettingsHelper
 
+# This plugin is made thanks to chazwarp923's plugin, I only modified it and expanded on it
 
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
-    Name = "Baldur's Gate 3 Support Plugin"
-    Author = "chazwarp923"
-    Version = "2.1.0"
+    Name = "Baldur's Gate 3 Unofficial Support Plugin"
+    Author = "Dragozino"
+    Version = "1.0.0"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
@@ -39,7 +39,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     GameIniFiles = ["modsettings.lsx", "config.lsf", "profile8.lsf", "UILayout.lsx"]
 
     PAK_MOD_PREFIX = "PAK_FILES"
-    SCRIPT_EXTENDER_CONFIG_PREFIX = "BG3SE_CONFIG"
+    SCRIPT_EXTENDER_CONFIG_PREFIX = "SE_CONFIG"
 
     def __init__(self):
         BasicGame.__init__(self)
@@ -56,7 +56,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
 
         self._register_feature(BasicLocalSavegames(self.savesDirectory()))
 
-        #self._organizer.onAboutToRun(self.onAboutToRun)
+        self._organizer.onAboutToRun(self.onAboutToRun)
         self._organizer.onFinishedRun(self.onFinishedRun)
 
         return True
@@ -77,6 +77,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
 
     def mappings(self) -> List[mobase.Mapping]:
         map = []
+
         modDirs = [self.PAK_MOD_PREFIX]
         self._listDirsRecursive(modDirs, prefix=self.PAK_MOD_PREFIX)
         for dir_ in modDirs:
@@ -94,12 +95,12 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
                 map.append(m)
 
         configDirs = [self.SCRIPT_EXTENDER_CONFIG_PREFIX]
-        self._listDirsRecursive(configDirs, prefix=self.SCRIPT_EXTENDER_CONFIG_PREFIX)
+        self._listDirsRecursive(configDirs, prefix=self.SCRIPT_EXTENDER_CONFIG_PREFIX)    
         for dir_ in configDirs:
             for file_ in self._organizer.findFiles(path=dir_, filter=lambda x: True):
                 m = mobase.Mapping()
                 m.createTarget = True
-                m.isDirectory = False
+                m.isDirectory = os.path.isdir(file_)
                 m.source = file_
                 m.destination = os.path.join(
                     QDir(
@@ -110,6 +111,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
                     .strip("/"),
                 )
                 map.append(m)
+                
         return map
 
     def _listDirsRecursive(self, dirs_list, prefix=""):
@@ -119,37 +121,70 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
             dirs_list.append(dir_)
             self._listDirsRecursive(dirs_list, dir_)
 
-    def onAboutToRun(self, path: str) -> bool:
-        ModSettingsHelper.generateSettings(
-            self._organizer.modList(), self._organizer.profile()
-        )
+    def onModChanged(self, mod) -> bool:
+        modsDict = []
+        modsDict.append(next(iter(mod)))
+        ModSettingsHelper.generateSettings(self._organizer.modList(), self._organizer.profile(), modsDict)
+        return True
+
+    def onAboutToRun(self, mod):
+        ModSettingsHelper.generateSettings(self._organizer.modList(), self._organizer.profile(), [])
         return True
 
     def onFinishedRun(self, path: str, integer: int) -> bool:
-        seDir = QDir(
-            os.getenv("LOCALAPPDATA") + "/Larian Studios/Baldur's Gate 3/"
-        ).absoluteFilePath("Script Extender")
+        seDir = os.path.join(os.getenv("LOCALAPPDATA"), "Larian Studios", "Baldur's Gate 3", "Script Extender")
+        mo2_se_config_dir = os.path.join(self._organizer.overwritePath(), "SE_CONFIG")
 
-        # it = QDirIterator(seDir)
-        # while it.hasNext():
-        # f = QFile(it.next())
-        # if QFileInfo(f).fileName() != "." and QFileInfo(f).fileName() != "..":
-        # if not QDir(self._organizer.overwritePath() + QFileInfo(f).fileName()).exists():
-        # shutil.move(f.fileName(), self._organizer.overwritePath())
-        # find a way to not call if directory already exists
+        configDirs = [seDir]
+        
+        self._listDirsRecursive(configDirs, prefix=seDir)
+
+        for dir_ in configDirs:
+            for file_ in os.listdir(dir_):
+                full_src_path = os.path.join(dir_, file_)
+                relative_path = os.path.relpath(full_src_path, seDir)
+                dest_path = os.path.join(mo2_se_config_dir, relative_path)
+               
+                if os.path.isdir(full_src_path):
+                    if not os.path.exists(dest_path):
+                        os.makedirs(dest_path)
+                    
+                    for root, subdirs, files in os.walk(full_src_path):
+                        for subdir in subdirs:
+                            subdir_src = os.path.join(root, subdir)
+                            subdir_relative = os.path.relpath(subdir_src, seDir)
+                            subdir_dest = os.path.join(mo2_se_config_dir, subdir_relative)
+                            
+                            if not os.path.exists(subdir_dest):
+                                os.makedirs(subdir_dest)
+
+                        for file_ in files:
+                            file_src = os.path.join(root, file_)
+                            file_relative = os.path.relpath(file_src, seDir)
+                            file_dest = os.path.join(mo2_se_config_dir, file_relative)
+                            
+                            file_dest_dir = os.path.dirname(file_dest)
+                            if not os.path.exists(file_dest_dir):
+                                os.makedirs(file_dest_dir)
+                            
+                            shutil.move(file_src, file_dest)
+
+                elif os.path.isfile(full_src_path):
+                    dest_dir = os.path.dirname(dest_path)
+                    if not os.path.exists(dest_dir):
+                        os.makedirs(dest_dir)
+
+                    shutil.move(full_src_path, dest_path)
+        
         return True
-
 
 class BaldursGate3ModDataChecker(mobase.ModDataChecker):
     def __init__(self):
         super().__init__()
 
-    def dataLooksValid(
-        self, tree: mobase.IFileTree
-    ) -> mobase.ModDataChecker.CheckReturn:
+    def dataLooksValid(self, tree: mobase.IFileTree) -> mobase.ModDataChecker.CheckReturn:
         folders: List[mobase.IFileTree] = []
         files: List[mobase.FileTreeEntry] = []
-
         for entry in tree:
             if isinstance(entry, mobase.IFileTree):
                 folders.append(entry)
@@ -171,35 +206,38 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
             "Shaders",
             "Video",
             BaldursGate3Game.PAK_MOD_PREFIX,
+            BaldursGate3Game.SCRIPT_EXTENDER_CONFIG_PREFIX,
         ]
 
         VALID_FILE_EXTENSIONS = [
             ".pak",
             ".dll",
+            ".json"
         ]
 
-        for src_file in files:
-            for extension in VALID_FILE_EXTENSIONS:
-                if src_file.name().lower().endswith(extension.lower()):
-                    print("we should be fucking working ya twat")
-                    return mobase.ModDataChecker.FIXABLE
+        for mainFolder in folders:
+            for validFolder in VALID_FOLDERS:
+                if mainFolder.name().lower() == validFolder.lower():
+                    return mobase.ModDataChecker.VALID
 
+        for mainFile in files:
+            for extension in VALID_FILE_EXTENSIONS:
+                if mainFile.name().lower().endswith(extension.lower()) and mainFile.name() != "info.json":
+                    return mobase.ModDataChecker.FIXABLE
+                
+        for mainFolder in folders:
+            if mainFolder.name().lower() == "bin":
+                return mobase.ModDataChecker.FIXABLE
+            else:
+                for mainFile in mainFolder:
+                    for extension in VALID_FILE_EXTENSIONS:
+                            if mainFile.name().lower().endswith(extension.lower()) and mainFile.name() != "info.json":
+                                return mobase.ModDataChecker.FIXABLE
+                
         for src_folder in folders:
             for dst_folder in VALID_FOLDERS:
                 if src_folder.name().lower() == dst_folder.lower():
                     return mobase.ModDataChecker.VALID
-
-        for src_folder in folders:
-            if src_folder.name().lower().endswith("bin"):
-                return mobase.ModDataChecker.FIXABLE
-
-        for src_folder in folders:
-            if "ModFixer" in str(src_folder):
-                return mobase.ModDataChecker.FIXABLE
-            if src_folder in VALID_FOLDERS:
-                print()
-            else:
-                print("Invalid Folder: " + str(src_folder))
 
         return mobase.ModDataChecker.INVALID
 
@@ -207,23 +245,56 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
         folders: List[mobase.IFileTree] = []
         files: List[mobase.FileTreeEntry] = []
         for entry in tree:
-            print("entry in fix: " + str(entry))
             if isinstance(entry, mobase.IFileTree):
                 folders.append(entry)
             else:
                 files.append(entry)
 
-        for src_folder in folders:
-            if src_folder.name().lower().endswith("bin".lower()):
-                tree.move(src_folder, "/Root/", policy=mobase.IFileTree.MERGE)
+        REMOVE_FILES = [
+            "readme"
+        ]
+        REMOVE_FILE_EXTENSIONS = [
+            ".url",
+            ".html",
+            ".ink"
+        ]
 
-        for src_file in files:
-            if src_file.name().lower().endswith(".dll".lower()):
-                tree.move(src_file, "/Root/bin/", policy=mobase.IFileTree.MERGE)
+        # Remove unnecessary files
+        for mainFile in files:
+            for extension in REMOVE_FILE_EXTENSIONS:
+                if mainFile.name().lower().endswith(extension.lower()):
+                     tree.remove(mainFile)
+            for filename in REMOVE_FILES:
+                if mainFile.name().lower() == filename:
+                     tree.remove(mainFile)
 
-        for src_file in files:
-            if src_file.name().lower().endswith(".pak".lower()):
-                print("moving file")
-                tree.move(src_file, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
+            
+        for mainFolder in folders:
+            for mainFile in mainFolder:
+                for extension in REMOVE_FILE_EXTENSIONS:
+                    if mainFile.name().lower().endswith(extension.lower()):
+                        tree.remove(mainFolder)
+                for filename in REMOVE_FILES:
+                    if mainFile.name().lower() == filename:
+                       tree.remove(mainFolder)
+
+
+        for mainFile in files:
+            if mainFile.name().lower().endswith(".pak".lower()):
+                if mainFile == None: continue
+                tree.move(mainFile, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
+            if mainFile.name().lower().endswith(".json".lower()) and mainFile.name() != "info.json":
+                tree.move(mainFile, "/SE_CONFIG/", policy=mobase.IFileTree.MERGE)
+                    
+        for mainFolder in folders:
+            if mainFolder.name().lower() == "bin":
+                tree.move(mainFolder, "/Root/", policy=mobase.IFileTree.MERGE)
+            else:
+                for mainFile in mainFolder:
+                    if mainFile == None: continue
+                    if mainFile.name().lower().endswith(".pak".lower()):
+                        tree.move(mainFile, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
+                    if mainFile.name().lower().endswith(".json".lower()) and mainFile.name() != "info.json":
+                        tree.move(mainFile, "/SE_CONFIG/", policy=mobase.IFileTree.MERGE)
 
         return tree
