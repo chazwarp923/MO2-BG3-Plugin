@@ -3,18 +3,21 @@
 import os, shutil
 from typing import List, Optional
 from PyQt6.QtCore import QDir, QFileInfo, QDirIterator, QFile, QFileInfo, qDebug
+from PyQt6.QtWidgets import QWidget, QMessageBox, QLabel
 
 import mobase
+import mobase.widgets
 
 from ..basic_features import BasicGameSaveGameInfo, BasicLocalSavegames, BasicModDataChecker
 from ..basic_game import BasicGame
 
 from .baldursgate3 import ModSettingsHelper
+from .baldursgate3 import UpdateChecker
 
-class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
+class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper, mobase.IPluginTool):
     Name = "Baldur's Gate 3 Unofficial Support Plugin"
     Author = "chazwarp923 & Dragozino"
-    Version = "2.2.0"
+    Version = "2.2.1"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
@@ -35,6 +38,9 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
         + "/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/Savegames/Story"
     )
     GameIniFiles = ["modsettings.lsx", "config.lsf", "profile8.lsf", "UILayout.lsx"]
+    GameSupportURL = (
+        r"https://github.com/chazwarp923/MO2-BG3-Plugin"
+    )
 
     PAK_MOD_PREFIX = "PAK_FILES"
     SCRIPT_EXTENDER_CONFIG_PREFIX = "SE_CONFIG"
@@ -42,20 +48,18 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     def __init__(self):
         BasicGame.__init__(self)
         mobase.IPluginFileMapper.__init__(self)
+        mobase.IPluginTool.__init__(self)
 
     def init(self, organizer: mobase.IOrganizer):
         super().init(organizer)
 
-        self._register_feature(BasicGameSaveGameInfo(
-            lambda s: s.with_suffix(".webp")
-        ))
-
+        self._register_feature(BasicGameSaveGameInfo(lambda s: s.with_suffix(".webp")))
         self._register_feature(BaldursGate3ModDataChecker())
-
         self._register_feature(BasicLocalSavegames(self.savesDirectory()))
-
         self._organizer.onAboutToRun(self.onAboutToRun)
         self._organizer.onFinishedRun(self.onFinishedRun)
+        
+        organizer.onUserInterfaceInitialized(self.checkForUpdate())
 
         return True
 
@@ -183,6 +187,17 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
                         shutil.move(full_src_path, dest_path)
         
         return True
+        
+    def checkForUpdate(self):
+        #updateNeeded, latestVersion = UpdateChecker.check_updates(self.Version, "chazwarp923", "MO2-BG3-Plugin")
+        latestVersion = 1.0
+        #if updateNeeded == True:
+            updateMessage = "Your current version is " + self.Version + "\nThe newest version is " + latestVersion
+            updateDialog = mobase.widgets.TaskDialog(self._parentWidget(), 'Update Available', 'Baldurs Gate 3 Plugin Update Available', updateMessage, '', QMessageBox.Icon.NoIcon, [], '')
+            updateLink = QLabel("<a href=https://www.nexusmods.com/site/mods/807?tab=files>Download available here</a>")
+            updateLink.setOpenExternalLinks(True)
+            updateDialog.addContent(updateLink)
+            updateDialog.exec()
 
 class BaldursGate3ModDataChecker(mobase.ModDataChecker):
     def __init__(self):
