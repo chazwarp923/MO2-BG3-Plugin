@@ -11,12 +11,10 @@ from ..basic_game import BasicGame
 
 from .baldursgate3 import ModSettingsHelper
 
-# This plugin is made thanks to chazwarp923's plugin, I only modified it and expanded on it
-
 class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
     Name = "Baldur's Gate 3 Unofficial Support Plugin"
-    Author = "Dragozino"
-    Version = "1.0.0"
+    Author = "chazwarp923 & Dragozino"
+    Version = "2.2.0"
 
     GameName = "Baldur's Gate 3"
     GameShortName = "baldursgate3"
