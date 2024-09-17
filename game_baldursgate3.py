@@ -138,41 +138,42 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
         self._listDirsRecursive(configDirs, prefix=seDir)
 
         for dir_ in configDirs:
-            for file_ in os.listdir(dir_):
-                full_src_path = os.path.join(dir_, file_)
-                relative_path = os.path.relpath(full_src_path, seDir)
-                dest_path = os.path.join(mo2_se_config_dir, relative_path)
-               
-                if os.path.isdir(full_src_path):
-                    if not os.path.exists(dest_path):
-                        os.makedirs(dest_path)
-                    
-                    for root, subdirs, files in os.walk(full_src_path):
-                        for subdir in subdirs:
-                            subdir_src = os.path.join(root, subdir)
-                            subdir_relative = os.path.relpath(subdir_src, seDir)
-                            subdir_dest = os.path.join(mo2_se_config_dir, subdir_relative)
-                            
-                            if not os.path.exists(subdir_dest):
-                                os.makedirs(subdir_dest)
+            if os.path.exists(dir_):
+                for file_ in os.listdir(dir_):
+                    full_src_path = os.path.join(dir_, file_)
+                    relative_path = os.path.relpath(full_src_path, seDir)
+                    dest_path = os.path.join(mo2_se_config_dir, relative_path)
 
-                        for file_ in files:
-                            file_src = os.path.join(root, file_)
-                            file_relative = os.path.relpath(file_src, seDir)
-                            file_dest = os.path.join(mo2_se_config_dir, file_relative)
-                            
-                            file_dest_dir = os.path.dirname(file_dest)
-                            if not os.path.exists(file_dest_dir):
-                                os.makedirs(file_dest_dir)
-                            
-                            shutil.move(file_src, file_dest)
+                    if os.path.isdir(full_src_path):
+                        if not os.path.exists(dest_path):
+                            os.makedirs(dest_path)
 
-                elif os.path.isfile(full_src_path):
-                    dest_dir = os.path.dirname(dest_path)
-                    if not os.path.exists(dest_dir):
-                        os.makedirs(dest_dir)
+                        for root, subdirs, files in os.walk(full_src_path):
+                            for subdir in subdirs:
+                                subdir_src = os.path.join(root, subdir)
+                                subdir_relative = os.path.relpath(subdir_src, seDir)
+                                subdir_dest = os.path.join(mo2_se_config_dir, subdir_relative)
 
-                    shutil.move(full_src_path, dest_path)
+                                if not os.path.exists(subdir_dest):
+                                    os.makedirs(subdir_dest)
+
+                            for file_ in files:
+                                file_src = os.path.join(root, file_)
+                                file_relative = os.path.relpath(file_src, seDir)
+                                file_dest = os.path.join(mo2_se_config_dir, file_relative)
+
+                                file_dest_dir = os.path.dirname(file_dest)
+                                if not os.path.exists(file_dest_dir):
+                                    os.makedirs(file_dest_dir)
+
+                                shutil.move(file_src, file_dest)
+
+                    elif os.path.isfile(full_src_path):
+                        dest_dir = os.path.dirname(dest_path)
+                        if not os.path.exists(dest_dir):
+                            os.makedirs(dest_dir)
+
+                        shutil.move(full_src_path, dest_path)
         
         return True
 
