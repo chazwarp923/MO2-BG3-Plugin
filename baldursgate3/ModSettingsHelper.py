@@ -290,14 +290,15 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
 
     temp_dir = Path(temp_dir)
 
-    for item in temp_dir.iterdir():
-        try:
-            if item.is_file() or item.is_symlink():
-                item.unlink()
-            elif item.is_dir():
-                shutil.rmtree(item)
-        except Exception as e:
-            print(f"Error deleting {item}: {e}")     
+    if os.path.exists(temp_dir):
+        for item in temp_dir.iterdir():
+            try:
+                if item.is_file() or item.is_symlink():
+                    item.unlink()
+                elif item.is_dir():
+                    shutil.rmtree(item)
+            except Exception as e:
+                print(f"Error deleting {item}: {e}")
                 
 
     return True
