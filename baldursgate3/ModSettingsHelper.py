@@ -91,7 +91,7 @@ def parse_meta_lsx(meta_lsx_path): # Extract information from meta.lsx
         }
         return mod_info
 
-def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDict: dict = None) -> bool:
+def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDict: list = None) -> bool:
     #raise IndexError(divine_path)
 
     modInfoDict = {}
@@ -103,14 +103,14 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
     # Extract meta.lsx from PAK Files
     for mod in modSequence:
        if (int(modList.state(mod) / 2) % 2 != 0):
-            pakFileFolder = modList.getMod(mod).absolutePath() + "\PAK_FILES" 
+            pakFileFolder = modList.getMod(mod).absolutePath() + "\\PAK_FILES"
         
-            info = modList.getMod(mod).absolutePath() + "\info.json"
+            info = modList.getMod(mod).absolutePath() + "\\info.json"
             if os.path.isdir(pakFileFolder):
                 if not os.path.exists(info):
                     files = os.listdir(pakFileFolder)
                     files = [f for f in files if f.endswith(".pak")]
-                    for file in os.listdir(pakFileFolder):
+                    for file in files:
                         if file.endswith(".pak"):
                             mod_temp_dir = os.path.join(temp_dir, mod)
                             if not os.path.exists(mod_temp_dir):
@@ -192,7 +192,7 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
     # Add info.json to mods that don't have it
     for mod in modSequence:
         if (int(modList.state(mod) / 2) % 2 != 0):
-            info = modList.getMod(mod).absolutePath() + "\info.json"
+            info = modList.getMod(mod).absolutePath() + "\\info.json"
 
             if not os.path.exists(info):
                 if modInfoDict.get(mod):
@@ -220,7 +220,7 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
                     
                     with open(file_name, 'w') as file:
                         json.dump(JSONdata, file, indent=4)
-                        modJsons[mod] = modList.getMod(mod).absolutePath() + "\info.json"
+                        modJsons[mod] = modList.getMod(mod).absolutePath() + "\\info.json"
 
                    
 
