@@ -114,7 +114,7 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
             if os.path.isdir(pakFileFolder):
                 modInfoDict[mod] = []
                 files = os.listdir(pakFileFolder)
-                files = [f for f in files if f.endswith(".pak")]
+                files = [f for f in files if f.lower().endswith(".pak")]
                 for file in files:
                     mod_temp_dir = os.path.join(temp_dir, mod, file.split(".")[0])
                     if not os.path.exists(mod_temp_dir):
