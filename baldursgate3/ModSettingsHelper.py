@@ -91,7 +91,7 @@ def parse_meta_lsx(meta_lsx_path): # Extract information from meta.lsx
         }
         return mod_info
 
-def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDict: dict = None) -> bool:
+def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDict: list = None) -> bool:
     #raise IndexError(divine_path)
 
     modInfoDict = {}
@@ -102,25 +102,27 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
 
     # Extract meta.lsx from PAK Files
     for mod in modSequence:
-       if (int(modList.state(mod) / 2) % 2 != 0):
-            pakFileFolder = modList.getMod(mod).absolutePath() + "\PAK_FILES" 
-        
-            info = modList.getMod(mod).absolutePath() + "\info.json"
-            if os.path.isdir(pakFileFolder):
-                if not os.path.exists(info):
-                    files = os.listdir(pakFileFolder)
-                    files = [f for f in files if f.endswith(".pak")]
-                    for file in os.listdir(pakFileFolder):
-                        if file.endswith(".pak"):
-                            mod_temp_dir = os.path.join(temp_dir, mod)
-                            if not os.path.exists(mod_temp_dir):
-                                os.makedirs(mod_temp_dir)
+        if (int(modList.state(mod) / 2) % 2 != 0):
+            pakFileFolder = modList.getMod(mod).absolutePath() + "\\PAK_FILES"
 
-                            mod_info = extract_meta_lsx(os.path.join(pakFileFolder, file), mod_temp_dir)
-                            if mod_info:
-                                modInfoDict[mod] = mod_info 
+            info = modList.getMod(mod).absolutePath() + "\\info.json"
+
             if os.path.exists(info):
                 modJsons[mod] = info
+                continue
+
+            if os.path.isdir(pakFileFolder):
+                modInfoDict[mod] = []
+                files = os.listdir(pakFileFolder)
+                files = [f for f in files if f.lower().endswith(".pak")]
+                for file in files:
+                    mod_temp_dir = os.path.join(temp_dir, mod, file.split(".")[0])
+                    if not os.path.exists(mod_temp_dir):
+                        os.makedirs(mod_temp_dir)
+
+                    mod_info = extract_meta_lsx(os.path.join(pakFileFolder, file), mod_temp_dir)
+                    if mod_info:
+                        modInfoDict[mod].append(mod_info)
 
     # Add Gustav to modsettings.lsx
     root = minidom.Document()
@@ -192,56 +194,41 @@ def generateSettings(modList: mobase.IModList, profile: mobase.IProfile, modsDic
     # Add info.json to mods that don't have it
     for mod in modSequence:
         if (int(modList.state(mod) / 2) % 2 != 0):
-            info = modList.getMod(mod).absolutePath() + "\info.json"
+            info = modList.getMod(mod).absolutePath() + "\\info.json"
 
-            if not os.path.exists(info):
-                if modInfoDict.get(mod):
-                    infojsonDict = modInfoDict[mod]
+            if os.path.exists(info):
+                continue
 
-                    JSONdata = {
-                            "Mods": [
-                                {
-                                    "Name": "",
-                                    "UUID": "",
-                                    "Folder": "",
-                                    "Version": "",
-                                    "MD5": ""
-                                }
-                            ]
-                        }
+            if modInfoDict.get(mod):
+                JSONdata = { "Mods": [] }
+                for infojsonDict in modInfoDict[mod]:
+                    JSONdata['Mods'].append(infojsonDict)
 
-                    JSONdata['Mods'][0]['Name'] = infojsonDict['Name']
-                    JSONdata['Mods'][0]['UUID'] = infojsonDict['UUID']
-                    JSONdata['Mods'][0]['Folder'] = infojsonDict['Folder']
-                    JSONdata['Mods'][0]['Version'] = infojsonDict['Version']
-                    JSONdata['Mods'][0]['MD5'] = infojsonDict['MD5']
+                    file_name = os.path.join(modList.getMod(mod).absolutePath(), 'info.json')
 
-                    file_name = os.path.join(modList.getMod(mod).absolutePath() , 'info.json')
-                    
                     with open(file_name, 'w') as file:
                         json.dump(JSONdata, file, indent=4)
-                        modJsons[mod] = modList.getMod(mod).absolutePath() + "\info.json"
-
-                   
+                        modJsons[mod] = modList.getMod(mod).absolutePath() + "\\info.json"
 
     # Generate modsettings.lsx
     for mod in modSequence:
         if (int(modList.state(mod) / 2) % 2 != 0):
-            if modJsons.get(mod):              
+            if modJsons.get(mod):
                 with open(modJsons[mod], 'r') as file:
-                    #modJsons
+                    # modJsons
                     infoJson = json.load(file)
 
                     mods = infoJson.get('Mods') or infoJson.get('mods')
-                    
-                    infoJson = mods[0]
 
-                    name = get_attribute(infoJson, 'Name', 'modName')
-                    folder = get_attribute(infoJson, 'Folder', 'folderName')
-                    uuid = get_attribute(infoJson, 'UUID', 'uuid')
-                    version = get_attribute(infoJson, 'Version', 'version')
-                    
-                    if name != "Override_Mod":
+                    for mod in mods:
+                        name = get_attribute(mod, 'Name', 'modName')
+                        folder = get_attribute(mod, 'Folder', 'folderName')
+                        uuid = get_attribute(mod, 'UUID', 'uuid')
+                        version = get_attribute(mod, 'Version', 'version')
+
+                        if name == "Override_Mod":
+                            continue
+
                         nodeModule = root.createElement('node')
                         nodeModule.setAttribute('id', 'Module')
                         nodeModOrderChildren.appendChild(nodeModule)
