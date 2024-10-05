@@ -110,6 +110,14 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
                 )
                 map.append(m)
                 
+        map.append(
+            mobase.Mapping(
+                source = self._organizer.profile().absolutePath() + "/modsettings.lsx",
+                destination = self.GameDocumentsDirectory + "/modsettings.lsx",
+                is_directory = False,
+            )
+        )
+
         return map
 
     def _listDirsRecursive(self, dirs_list, prefix=""):
