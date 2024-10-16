@@ -9,8 +9,9 @@ BG3 install folder
 
 In my personal testing, this is capable of loading dll mods, such as achievement enabler and script extender.
 
-INSTALLATION
+# INSTALLATION
 
 Go to your Mod Organizer 2 installation folder and navigate to
 "plugins/basic_games/games" and put "game_baldursgate3.py" and the "baldursgate3" folder in there.
  
+[MO2-BG3-Plugin](https://github.com/chazwarp923/MO2-BG3-Plugin) © 2023 by chazwarp923 is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)
