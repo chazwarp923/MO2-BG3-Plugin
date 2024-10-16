@@ -120,8 +120,7 @@ class BaldursGate3Game(BasicGame, mobase.IPluginFileMapper):
             self._listDirsRecursive(dirs_list, dir_)
 
     def onModChanged(self, mod) -> bool:
-        modsDict = []
-        modsDict.append(next(iter(mod)))
+        modsDict = [next(iter(mod))]
         ModSettingsHelper.generateSettings(self._organizer.modList(), self._organizer.profile(), modsDict)
         return True
 
@@ -280,7 +279,7 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
 
         for mainFile in files:
             if mainFile.name().lower().endswith(".pak".lower()):
-                if mainFile == None: continue
+                if mainFile is None: continue
                 tree.move(mainFile, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
             if mainFile.name().lower().endswith(".json".lower()) and mainFile.name() != "info.json":
                 tree.move(mainFile, "/SE_CONFIG/", policy=mobase.IFileTree.MERGE)
@@ -290,7 +289,7 @@ class BaldursGate3ModDataChecker(mobase.ModDataChecker):
                 tree.move(mainFolder, "/Root/", policy=mobase.IFileTree.MERGE)
             else:
                 for mainFile in mainFolder:
-                    if mainFile == None: continue
+                    if mainFile is None: continue
                     if mainFile.name().lower().endswith(".pak".lower()):
                         tree.move(mainFile, "/PAK_FILES/", policy=mobase.IFileTree.MERGE)
                     if mainFile.name().lower().endswith(".json".lower()) and mainFile.name() != "info.json":
